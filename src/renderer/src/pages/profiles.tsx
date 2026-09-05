@@ -501,9 +501,6 @@ const Profiles: React.FC = () => {
                 onClick={async () => {
                   setSwitching(true)
                   await changeCurrentProfile(item.id)
-                  await new Promise((resolve) => {
-                    setTimeout(resolve, 500)
-                  })
                   setSwitching(false)
                 }}
               />
