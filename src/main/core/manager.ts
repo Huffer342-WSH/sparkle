@@ -358,7 +358,9 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
   }
 
   await generateProfile()
-  await checkProfile()
+  if (useServiceCore || detached) {
+    await checkProfile()
+  }
   let serviceCoreRunning = false
   if (useServiceCore) {
     try {
@@ -470,6 +472,26 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
     env: env
   })
   directCoreState.child = child
+  let startupOutput = ''
+  let configurationRejected = false
+  let spawnError: Error | undefined
+  const captureStartupOutput = (data: Buffer): void => {
+    if (initialized) return
+    startupOutput += data.toString()
+    configurationRejected ||= startupOutput.includes('Parse config error:')
+    startupOutput = startupOutput.slice(-16384)
+  }
+  child.stdout?.on('data', captureStartupOutput)
+  child.stderr?.on('data', captureStartupOutput)
+  child.once('error', (error) => {
+    spawnError = error
+  })
+  const startupFailure = (reason: unknown): Error => {
+    const details = startupOutput.trim()
+    return new Error(
+      `内核启动失败：${spawnError?.message || String(reason)}${details ? `\n${details}` : ''}`
+    )
+  }
   hookWaiter?.attachProcess(child)
   if (child.pid) {
     try {
@@ -487,7 +509,7 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
   child.on('close', async (code, signal) => {
     flushDirectCoreLogNotifications()
     await appendAppLog(`[Manager]: Core closed, code: ${code}, signal: ${signal}\n`)
-    if (directCoreState.retry) {
+    if (!configurationRejected && directCoreState.retry) {
       await appendAppLog(`[Manager]: Try Restart Core\n`)
       directCoreState.retry--
       await restartCore()
@@ -524,7 +546,7 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
 
     return new Promise((resolve, reject) => {
       child.once('close', (code, signal) => {
-        reject(new Error(`内核启动失败，code: ${code}, signal: ${signal}`))
+        reject(startupFailure(`code: ${code}, signal: ${signal}`))
       })
 
       child.stdout?.on('data', async (data) => {
@@ -562,7 +584,7 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
 
               child.once('close', (code, signal) => {
                 if (!initialized) {
-                  reject(new Error(`内核启动失败，code: ${code}, signal: ${signal}`))
+                  reject(startupFailure(`code: ${code}, signal: ${signal}`))
                 }
               })
             })
@@ -587,7 +609,7 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
           await startMihomoApiStreams()
           resolve([completeCoreInitialization(logLevel)])
         })
-        .catch(reject)
+        .catch((error) => reject(startupFailure(error)))
     })
   }
 
