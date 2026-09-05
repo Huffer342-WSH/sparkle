@@ -1,4 +1,5 @@
 import { ChildProcess, spawn } from 'child_process'
+import { createInterface } from 'readline'
 import { dataDir, coreLogPath, mihomoCorePath } from '../utils/dirs'
 import { systemCoreOnlyBuild } from '../../shared/build-flags'
 import { generateProfile, getRuntimeConfig } from './factory'
@@ -540,54 +541,45 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
 
   const waitForCoreReadyByLog = (): Promise<Promise<void>[]> => {
     let controllerReady = false
+    let providersReady = false
+    let completing = false
 
     return new Promise((resolve, reject) => {
+      if (!child.stdout) {
+        reject(startupFailure('Core stdout is unavailable'))
+        return
+      }
+      const lines = createInterface({ input: child.stdout })
       child.once('close', (code, signal) => {
+        lines.close()
         reject(startupFailure(`code: ${code}, signal: ${signal}`))
       })
 
-      child.stdout?.on('data', async (data) => {
-        const str = data.toString()
-        await handleCoreOutput(str, reject)
+      lines.on('line', (line) => {
+        const handleLine = async (): Promise<void> => {
+          await handleCoreOutput(line, reject)
+          if (initialized) return
 
-        if (!controllerReady && isControllerReadyLog(str)) {
-          controllerReady = true
-          resolve([
-            new Promise((resolve, reject) => {
-              const handleProviderInitialization = async (logLine: string): Promise<void> => {
-                providerTracker.track(logLine)
+          providerTracker.track(line)
+          providersReady ||= providerTracker.isReady(line)
+          controllerReady ||= isControllerReadyLog(line)
 
-                if (isTunPermissionError(logLine)) {
-                  patchControledMihomoConfig({ tun: { enable: false } })
-                  mainWindow?.webContents.send('controledMihomoConfigUpdated')
-                  ipcMain.emit('updateTrayMenu')
-                  reject('虚拟网卡启动失败，前往内核设置页尝试手动授予内核权限')
-                }
+          if (isTunPermissionError(line)) {
+            patchControledMihomoConfig({ tun: { enable: false } })
+            mainWindow?.webContents.send('controledMihomoConfigUpdated')
+            ipcMain.emit('updateTrayMenu')
+            reject('虚拟网卡启动失败，前往内核设置页尝试手动授予内核权限')
+            return
+          }
 
-                if (providerTracker.isReady(logLine)) {
-                  await waitForMihomoReady()
-                  initialized = true
-                  completeCoreInitialization(logLevel)
-                    .then(() => resolve())
-                    .catch(reject)
-                }
-              }
-
-              child.stdout?.on('data', (data) => {
-                if (!initialized) {
-                  handleProviderInitialization(data.toString()).catch(reject)
-                }
-              })
-
-              child.once('close', (code, signal) => {
-                if (!initialized) {
-                  reject(startupFailure(`code: ${code}, signal: ${signal}`))
-                }
-              })
-            })
-          ])
+          if (!controllerReady || !providersReady || completing) return
+          completing = true
           await startMihomoApiStreams()
+          await waitForMihomoReady()
+          initialized = true
+          resolve([completeCoreInitialization(logLevel)])
         }
+        handleLine().catch(reject)
       })
     })
   }
