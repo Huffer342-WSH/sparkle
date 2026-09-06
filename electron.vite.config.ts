@@ -19,7 +19,10 @@ const omitExternalRendererResources = {
 
 export default defineConfig({
   main: {
-    define: buildDefines,
+    define: {
+      ...buildDefines,
+      __SPARKLE_ISOLATED__: process.env.SPARKLE_ISOLATED === '1'
+    },
     build: {
       externalizeDeps: {
         exclude: ['age-encryption']

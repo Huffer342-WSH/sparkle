@@ -1,3 +1,4 @@
+import { testConfig } from '../diagnostics/test-config'
 import { getAppConfig, getControledMihomoConfig } from '../config'
 import { pacPort, startPacServer, stopPacServer } from '../resolve/server'
 import { promisify } from 'util'
@@ -33,6 +34,7 @@ export function triggerSysProxy(
   onlyActiveDevice: boolean,
   useRegistry = false
 ): Promise<void> {
+  if (testConfig) return Promise.resolve()
   const request = ++triggerSysProxyRequest
   if (triggerSysProxyTimer) {
     clearTimeout(triggerSysProxyTimer)
@@ -256,6 +258,7 @@ async function shouldNotifySysproxyGuardEvent(event: ServiceSysproxyEvent): Prom
 }
 
 export function disableSysProxySync(useRegistry = false): void {
+  if (testConfig) return
   if (process.platform !== 'win32') return
 
   try {

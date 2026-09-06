@@ -1,3 +1,4 @@
+import { testConfig } from '../diagnostics/test-config'
 import { is } from '@electron-toolkit/utils'
 import { existsSync, mkdirSync, readdirSync } from 'fs'
 import { app } from 'electron'
@@ -18,6 +19,7 @@ export function isPortable(): boolean {
 }
 
 export function dataDir(): string {
+  if (testConfig) return path.join(testConfig.runDir, 'data')
   if (isPortable()) {
     return path.join(exeDir(), 'data')
   } else {
@@ -78,6 +80,7 @@ export function themesDir(): string {
 }
 
 export function mihomoIpcPath(): string {
+  if (testConfig) return testConfig.pipe
   if (process.platform === 'win32') {
     return '\\\\.\\pipe\\Sparkle\\mihomo'
   }
@@ -106,6 +109,7 @@ export function mihomoCoreDir(): string {
 }
 
 export function mihomoCorePath(core: string): string {
+  if (testConfig) return testConfig.corePath
   if (core === 'mihomo' || core === 'mihomo-alpha') {
     const isWin = process.platform === 'win32'
     return path.join(mihomoCoreDir(), `${core}${isWin ? '.exe' : ''}`)

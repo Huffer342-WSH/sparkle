@@ -22,7 +22,8 @@
     "postinstall": "install-electron && electron-builder install-app-deps",
     "build:win": "electron-vite build && electron-builder --publish never --win",
     "build:mac": "electron-vite build && electron-builder --publish never --mac",
-    "build:linux": "electron-vite build && node scripts/package-linux.ts"
+    "build:linux": "electron-vite build && node scripts/package-linux.ts",
+    "dev:isolated": "install-electron && node scripts/dev-isolated.cjs"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

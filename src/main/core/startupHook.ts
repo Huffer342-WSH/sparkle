@@ -1,3 +1,4 @@
+import { testConfig } from '../diagnostics/test-config'
 import type { ChildProcess } from 'child_process'
 import { existsSync, watch } from 'fs'
 import type { FSWatcher } from 'fs'
@@ -30,6 +31,7 @@ function hookTouchCommand(file: string): string {
 }
 
 function coreHookDir(): string {
+  if (testConfig) return path.join(testConfig.runDir, 'data/core-hooks')
   if (process.platform === 'win32' && process.env.ProgramData) {
     return path.join(process.env.ProgramData, 'sparkle', 'core-hooks')
   }
