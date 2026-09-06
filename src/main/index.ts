@@ -1,3 +1,4 @@
+import { testConfig } from './diagnostics/test-config'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpcMainHandlers } from './utils/ipc'
 import { app, shell, BrowserWindow, Menu, type IpcMainEvent } from 'electron'
@@ -226,6 +227,10 @@ app.whenReady().then(async () => {
   coreStartPromise.then(() => {
     if (coreStarted) {
       mainWindow?.webContents.send('core-started')
+      if (testConfig) {
+        mainWindow?.show()
+        mainWindow?.focus()
+      }
     }
   })
 

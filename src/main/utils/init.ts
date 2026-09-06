@@ -1,3 +1,4 @@
+import { testConfig } from '../diagnostics/test-config'
 import {
   appConfigPath,
   controledMihomoConfigPath,
@@ -196,6 +197,7 @@ async function migration(): Promise<void> {
 }
 
 function initDeeplink(): void {
+  if (testConfig) return
   if (process.defaultApp) {
     if (process.argv.length >= 2) {
       app.setAsDefaultProtocolClient('clash', process.execPath, [path.resolve(process.argv[1])])

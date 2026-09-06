@@ -1,0 +1,100 @@
+# Rule-heavy manual profile-switching fixture. All groups route DIRECT.
+mixed-port: 0
+allow-lan: false
+mode: rule
+log-level: info
+tun:
+  enable: false
+dns:
+  enable: false
+geodata-mode: true
+geodata-loader: memconservative
+geo-auto-update: false
+proxy-groups:
+  - name: Development
+    type: select
+    proxies:
+      - DIRECT
+  - name: Media
+    type: select
+    proxies:
+      - DIRECT
+  - name: Games
+    type: select
+    proxies:
+      - DIRECT
+  - name: Messaging
+    type: select
+    proxies:
+      - DIRECT
+  - name: Domestic
+    type: select
+    proxies:
+      - DIRECT
+  - name: Other
+    type: select
+    proxies:
+      - DIRECT
+rules:
+  - DOMAIN,localhost,DIRECT
+  - DOMAIN-SUFFIX,localhost,DIRECT
+  - DOMAIN-KEYWORD,intranet,DIRECT
+  - DOMAIN-WILDCARD,*.test.invalid,DIRECT
+  - DOMAIN-REGEX,^build[0-9]+\.example\.com$,Development
+  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
+  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+  - IP-CIDR6,::1/128,DIRECT,no-resolve
+  - IP-CIDR6,fc00::/7,DIRECT,no-resolve
+  - AND,((NETWORK,UDP),(DST-PORT,443)),Other
+  - OR,((DOMAIN-SUFFIX,example.org),(DOMAIN-SUFFIX,example.net)),Development
+  - AND,((DOMAIN-SUFFIX,example.com),(NOT,((DST-PORT,22)))),Development
+  - GEOSITE,private,Development
+  - GEOSITE,category-ads-all,Media
+  - GEOSITE,apple,Games
+  - GEOSITE,apple@cn,Messaging
+  - GEOSITE,microsoft,Domestic
+  - GEOSITE,microsoft@cn,Other
+  - GEOSITE,google,Development
+  - GEOSITE,youtube,Media
+  - GEOSITE,github,Games
+  - GEOSITE,gitlab,Messaging
+  - GEOSITE,telegram,Domestic
+  - GEOSITE,discord,Other
+  - GEOSITE,twitter,Development
+  - GEOSITE,facebook,Media
+  - GEOSITE,instagram,Games
+  - GEOSITE,whatsapp,Messaging
+  - GEOSITE,netflix,Domestic
+  - GEOSITE,spotify,Other
+  - GEOSITE,twitch,Development
+  - GEOSITE,steam,Media
+  - GEOSITE,epicgames,Games
+  - GEOSITE,playstation,Messaging
+  - GEOSITE,nintendo,Domestic
+  - GEOSITE,bilibili,Other
+  - GEOSITE,bilibili@cn,Development
+  - GEOSITE,bahamut,Media
+  - GEOSITE,tiktok,Games
+  - GEOSITE,openai,Messaging
+  - GEOSITE,amazon,Domestic
+  - GEOSITE,cloudflare,Other
+  - GEOSITE,category-games,Development
+  - GEOSITE,category-media,Media
+  - GEOSITE,category-dev,Games
+  - GEOSITE,category-scholar-!cn,Messaging
+  - GEOSITE,cn,Domestic
+  - GEOSITE,gfw,Other
+  - GEOSITE,geolocation-!cn,Development
+  - GEOIP,private,Other,no-resolve
+  - GEOIP,telegram,Other,no-resolve
+  - GEOIP,cn,Other,no-resolve
+  - GEOIP,us,Other,no-resolve
+  - GEOIP,jp,Other,no-resolve
+  - GEOIP,sg,Other,no-resolve
+  - GEOIP,hk,Other,no-resolve
+  - GEOIP,tw,Other,no-resolve
+  - GEOIP,de,Other,no-resolve
+  - GEOIP,gb,Other,no-resolve
+  - MATCH,Other

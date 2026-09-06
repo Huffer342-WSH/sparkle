@@ -1,4 +1,5 @@
 declare const __SPARKLE_SYSTEM_CORE_PATH__: string
+declare const __SPARKLE_ISOLATED__: boolean
 declare const __SPARKLE_SYSTEM_SERVICE_PATH__: string
 
 type OutboundMode = 'rule' | 'global' | 'direct'
